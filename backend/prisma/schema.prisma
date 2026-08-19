@@ -1,0 +1,137 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id    String  @id @default(uuid())
+  email String  @unique
+  name  String?
+  image String?
+
+  // Dietary Preferences & Goals
+  dietaryPrefs String? // e.g., "Keto, Vegan, Seafood Allergy"
+  kcalTarget   Int? // Daily kcal target
+  streak       Int     @default(0) // Consecutive days cooking
+
+  // Relations
+  recipes   Recipe[]        @relation("CreatedRecipes")
+  inventory InventoryItem[]
+  mealPlans MealPlan[]
+  posts     Post[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Recipe {
+  id          String  @id @default(uuid())
+  title       String
+  description String?
+  prepTime    Int // in minutes
+  difficulty  String // e.g., "Easy", "Medium", "Hard"
+  calories    Int?
+  videoUrl    String?
+  imageUrl    String?
+
+  authorId String
+  author   User   @relation("CreatedRecipes", fields: [authorId], references: [id])
+
+  ingredients RecipeIngredient[]
+  steps       Step[]
+  mealPlans   MealPlan[]
+  posts       Post[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Ingredient {
+  id   String @id @default(uuid())
+  name String @unique
+  unit String // e.g., "g", "ml", "tbsp"
+
+  // Relations
+  recipeItems    RecipeIngredient[]
+  inventoryItems InventoryItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RecipeIngredient {
+  id     String @id @default(uuid())
+  amount Float
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@unique([recipeId, ingredientId])
+}
+
+model Step {
+  id           String @id @default(uuid())
+  stepNumber   Int // Strict sequential order
+  instruction  String
+  timerSeconds Int? // Automatic timer for this step if any
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+  @@unique([recipeId, stepNumber])
+}
+
+model InventoryItem {
+  id             String    @id @default(uuid())
+  quantity       Float
+  expirationDate DateTime?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, ingredientId])
+}
+
+model MealPlan {
+  id       String   @id @default(uuid())
+  date     DateTime
+  mealType String // e.g., "Breakfast", "Lunch", "Dinner"
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+  @@unique([userId, date, mealType])
+}
+
+model Post {
+  id       String  @id @default(uuid())
+  content  String?
+  imageUrl String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  recipeId String?
+  recipe   Recipe? @relation(fields: [recipeId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

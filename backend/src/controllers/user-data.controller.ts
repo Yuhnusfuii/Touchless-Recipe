@@ -1,0 +1,15 @@
+import type { NextFunction, Response } from "express";
+import type { AuthRequest } from "../middlewares/auth.middleware.js";
+import { userDataService } from "../services/user-data.service.js";
+
+export class UserDataController {
+  async favorites(req: AuthRequest, res: Response, next: NextFunction): Promise<void> { try { if (!req.user?.id) { res.status(401).json({ success: false, message: "Not authorized" }); return; } res.json({ success: true, data: await userDataService.getFavorites(req.user.id) }); } catch (error) { next(error); } }
+  async toggleFavorite(req: AuthRequest, res: Response, next: NextFunction): Promise<void> { try { if (!req.user?.id) { res.status(401).json({ success: false, message: "Not authorized" }); return; } const { targetType, targetId, snapshot } = req.body; if (!["recipe", "post"].includes(targetType) || typeof targetId !== "string" || !targetId.trim()) { res.status(400).json({ success: false, message: "Valid favorite target is required" }); return; } res.json({ success: true, data: await userDataService.toggleFavorite(req.user.id, targetType, targetId, snapshot) }); } catch (error) { next(error); } }
+  async notifications(req: AuthRequest, res: Response, next: NextFunction): Promise<void> { try { if (!req.user?.id) { res.status(401).json({ success: false, message: "Not authorized" }); return; } res.json({ success: true, data: await userDataService.getNotifications(req.user.id) }); } catch (error) { next(error); } }
+  async markNotificationsRead(req: AuthRequest, res: Response, next: NextFunction): Promise<void> { try { if (!req.user?.id) { res.status(401).json({ success: false, message: "Not authorized" }); return; } await userDataService.markNotificationsRead(req.user.id); res.json({ success: true, data: null }); } catch (error) { next(error); } }
+  async progress(req: AuthRequest, res: Response, next: NextFunction): Promise<void> { try { if (!req.user?.id) { res.status(401).json({ success: false, message: "Not authorized" }); return; } res.json({ success: true, data: await userDataService.getCookingProgress(req.user.id) }); } catch (error) { next(error); } }
+  async saveProgress(req: AuthRequest, res: Response, next: NextFunction): Promise<void> { try { if (!req.user?.id) { res.status(401).json({ success: false, message: "Not authorized" }); return; } res.json({ success: true, data: await userDataService.saveCookingProgress(req.user.id, req.body) }); } catch (error) { next(error); } }
+  async clearProgress(req: AuthRequest, res: Response, next: NextFunction): Promise<void> { try { if (!req.user?.id) { res.status(401).json({ success: false, message: "Not authorized" }); return; } await userDataService.clearCookingProgress(req.user.id); res.json({ success: true, data: null }); } catch (error) { next(error); } }
+}
+
+export const userDataController = new UserDataController();

@@ -1,0 +1,7 @@
+import { CheckCircle2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+export function FinishCookingModal({ isVietnamese, isOpen, onCancel, onConfirm }: { isVietnamese: boolean; isOpen: boolean; onCancel: () => void; onConfirm: () => void }) {
+  if (!isOpen) return null
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="presentation"><div role="dialog" aria-modal="true" aria-labelledby="finish-cooking-title" className="w-full max-w-md rounded-2xl border border-emerald-700 bg-[#12211c] p-6 text-white shadow-2xl"><h2 id="finish-cooking-title" className="font-serif text-2xl font-bold">{isVietnamese ? "Bạn chắc chắn đã hoàn thành món?" : "Are you sure you finished this meal?"}</h2><p className="mt-3 text-sm leading-6 text-emerald-100/70">{isVietnamese ? "Nếu chọn Có, tiến độ nấu sẽ kết thúc và món sẽ được ghi nhận là đã hoàn thành." : "Choosing Yes ends this cooking session and records the meal as completed."}</p><div className="mt-6 flex justify-end gap-3"><Button variant="outline" onClick={onCancel} className="border-emerald-800 bg-emerald-950/40 text-emerald-200 hover:bg-emerald-900">{isVietnamese ? "Không, tiếp tục làm" : "No, keep cooking"}</Button><Button onClick={onConfirm} className="gap-2 bg-[#d97742] text-white hover:bg-[#bf6132]"><CheckCircle2 className="size-4" />{isVietnamese ? "Có, hoàn thành" : "Yes, complete"}</Button></div></div></div>
+}

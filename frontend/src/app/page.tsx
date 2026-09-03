@@ -1,21 +1,34 @@
-import Header from '@/components/landing/Header';
-import HeroSection from '@/components/landing/HeroSection';
-import FeaturesSection from '@/components/landing/FeaturesSection';
-import HowItWorksSection from '@/components/landing/HowItWorksSection';
-import TestimonialsSection from '@/components/landing/TestimonialsSection';
-import Footer from '@/components/landing/Footer';
+"use client"
+
+import { useSyncExternalStore } from "react"
+import LandingPage from "@/components/landing-page/landing-page"
+import Dashboard from "@/components/dashboard"
+
+function subscribeAuth(callback: () => void) {
+  window.addEventListener("storage", callback)
+  return () => window.removeEventListener("storage", callback)
+}
+
+function getAuthSnapshot() {
+  const token = localStorage.getItem("token")
+  const user = localStorage.getItem("user")
+  return Boolean(token && user)
+}
+
+function getAuthServerSnapshot() {
+  return false
+}
 
 export default function Home() {
-  return (
-    <div className="min-h-screen bg-white font-sans selection:bg-emerald-200">
-      <Header />
-      <main>
-        <HeroSection />
-        <FeaturesSection />
-        <HowItWorksSection />
-        <TestimonialsSection />
-      </main>
-      <Footer />
-    </div>
-  );
+  const isLoggedIn = useSyncExternalStore(
+    subscribeAuth,
+    getAuthSnapshot,
+    getAuthServerSnapshot
+  )
+
+  if (isLoggedIn) {
+    return <Dashboard />
+  }
+
+  return <LandingPage />
 }

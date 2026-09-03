@@ -1,0 +1,45 @@
+import type { FeedPost } from "./feed-types"
+
+export const starterPosts: FeedPost[] = [
+  {
+    id: "post-1",
+    author: "Minh Anh",
+    initials: "MA",
+    role: "Home cook",
+    time: "18 min ago",
+    title: "Crispy tofu, soft center",
+    body: "The trick is a short steam before the pan. It keeps the inside tender while the edges turn beautifully golden.",
+    image: "/images/roasted-harvest-bowl.jpg",
+    tags: ["Vegetarian", "Weeknight"],
+    likes: 84,
+    comments: [{ id: "comment-1", author: "Lina M.", avatar: "LM", text: "That texture looks perfect." }],
+  },
+  {
+    id: "post-2",
+    author: "Jamie Lee",
+    initials: "JL",
+    role: "Recipe tester",
+    time: "1 hr ago",
+    title: "A bright bowl for rainy days",
+    body: "Roasted vegetables, sesame soba, and a lime dressing. Minimal prep, maximum color.",
+    image: "/images/sesame-soba.jpg",
+    tags: ["Healthy", "15 min"],
+    likes: 126,
+    comments: [
+      { id: "comment-2", author: "Thanh N.", avatar: "TN", text: "Adding this to tonight's list." },
+      { id: "comment-3", author: "Maya R.", avatar: "MR", text: "Would roasted chickpeas work here?" },
+    ],
+  },
+  {
+    id: "post-3",
+    author: "Sofia Tran",
+    initials: "ST",
+    role: "Weekend baker",
+    time: "Yesterday",
+    title: "Small rituals make better bread",
+    body: "I started keeping a little bowl of toasted seeds by the oven. It makes the final sprinkle feel like a signature.",
+    tags: ["Baking", "Inspiration"],
+    likes: 52,
+    comments: [],
+  },
+]

@@ -18,6 +18,8 @@ export interface IGeneratedMealPlan extends Document {
   period: "days" | "week" | "month";
   servings: number;
   mealsPerDay: number;
+  mealsPerMeal: number;
+  mealTimes: Array<"breakfast" | "lunch" | "dinner">;
   dailyCalories: number;
   goal: string;
   tastes: string[];
@@ -36,6 +38,8 @@ const generatedMealPlanSchema = new Schema<IGeneratedMealPlan>(
     period: { type: String, enum: ["days", "week", "month"], required: true },
     servings: { type: Number, required: true },
     mealsPerDay: { type: Number, required: true },
+    mealsPerMeal: { type: Number, required: true, default: 1 },
+    mealTimes: { type: [String], enum: ["breakfast", "lunch", "dinner"], default: ["lunch", "dinner"] },
     dailyCalories: { type: Number, required: true },
     goal: { type: String, required: true },
     tastes: { type: [String], default: [] },

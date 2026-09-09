@@ -45,6 +45,7 @@ import {
   translateMeasure,
   translateRecipeTitle,
   translateStepInstruction,
+  translateTextToVietnamese,
 } from "@/lib/translate"
 import { cn } from "@/lib/utils"
 import { FAVORITES_CHANGE_EVENT, getFavoriteRecipes, toggleFavoriteRecipe } from "@/lib/favorites"
@@ -101,7 +102,43 @@ export function Dashboard() {
   const [favorites, setFavorites] = useState<Record<string, boolean>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeItem | null>(null)
+  const [translatedSteps, setTranslatedSteps] = useState<{
+    recipeId: string
+    values: Record<number, string>
+  } | null>(null)
   const [isVoiceGuideOpen, setIsVoiceGuideOpen] = useState(false)
+
+  useEffect(() => {
+    let isCurrent = true
+
+    if (!selectedRecipe || !isVietnamese) {
+      return () => {
+        isCurrent = false
+      }
+    }
+
+    const translateSteps = async () => {
+      const translated = await Promise.all(
+        selectedRecipe.steps.map(async (step) => [
+          step.stepNumber,
+          await translateTextToVietnamese(step.instruction),
+        ] as const)
+      )
+
+      if (isCurrent) {
+        setTranslatedSteps({
+          recipeId: selectedRecipe.id,
+          values: Object.fromEntries(translated),
+        })
+      }
+    }
+
+    void translateSteps()
+
+    return () => {
+      isCurrent = false
+    }
+  }, [isVietnamese, selectedRecipe])
 
   useEffect(() => {
     const syncFavorites = () => {
@@ -165,18 +202,18 @@ export function Dashboard() {
   return (
     <div className="min-h-screen bg-[#fbfaf7] text-[#17352d]">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-30 border-b border-[#dbe5dd] bg-[#fbfaf7]/90 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-[#31594c] bg-[#17352d]/95 text-white shadow-[0_8px_24px_rgba(23,53,45,0.12)] backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 sm:px-8 lg:px-12">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-[-0.04em]">
-            <span className="flex size-8 items-center justify-center rounded-full bg-[#17352d] text-[#f3d7a3]">
+          <Link href="/" className="flex shrink-0 items-center gap-3 text-lg font-bold tracking-[-0.04em]">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-[#f3d7a3] text-[#17352d] shadow-[4px_4px_0_#d97742]">
               <Leaf aria-hidden="true" className="size-4" />
             </span>
-            mise<span className="text-[#d97742]">.</span>
+            <span>mise<span className="text-[#f3a477]">.</span></span>
           </Link>
 
           {/* Quick Search Bar with live indicator */}
-          <div className="relative hidden w-80 md:block">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#527066]" />
+          <div className="relative hidden w-80 md:block lg:w-96">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#b9d1bd]" />
             <input
               type="text"
               placeholder={
@@ -186,30 +223,30 @@ export function Dashboard() {
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 w-full rounded-full border border-[#c5d2cc] bg-white pl-9 pr-8 text-xs outline-none transition focus:border-[#d97742] focus:ring-2 focus:ring-[#d97742]/20"
+              className="h-10 w-full rounded-full border border-white/15 bg-white/10 pl-9 pr-8 text-xs text-white outline-none transition placeholder:text-[#b9d1bd] focus:border-[#f3d7a3] focus:bg-white/15 focus:ring-2 focus:ring-[#f3d7a3]/20"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
               >
                 <X className="size-3.5" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Clear Dual-State Language Switcher */}
-            <div className="flex items-center rounded-lg border border-[#c5d2cc] bg-white p-0.5 text-xs font-semibold shadow-2xs">
+            <div className="flex items-center rounded-lg border border-white/15 bg-white/10 p-0.5 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setLanguage("vi")}
                 className={cn(
                   "flex items-center gap-1 rounded-md px-2.5 py-1 transition",
                   isVietnamese
-                    ? "bg-[#17352d] text-white shadow-xs"
-                    : "text-[#527066] hover:text-[#17352d]"
+                    ? "bg-[#f3d7a3] text-[#17352d] shadow-xs"
+                    : "text-[#dce8dc] hover:text-white"
                 )}
               >
                 <span>🇻🇳</span>
@@ -221,8 +258,8 @@ export function Dashboard() {
                 className={cn(
                   "flex items-center gap-1 rounded-md px-2.5 py-1 transition",
                   !isVietnamese
-                    ? "bg-[#17352d] text-white shadow-xs"
-                    : "text-[#527066] hover:text-[#17352d]"
+                    ? "bg-[#f3d7a3] text-[#17352d] shadow-xs"
+                    : "text-[#dce8dc] hover:text-white"
                 )}
               >
                 <span>🇬🇧</span>
@@ -232,7 +269,7 @@ export function Dashboard() {
 
             <Link
               href="/feed"
-              className="flex size-9 items-center justify-center rounded-full border border-[#c5d2cc] bg-white text-[#527066] transition hover:border-[#d97742] hover:text-[#d97742] sm:h-9 sm:w-auto sm:gap-1.5 sm:rounded-lg sm:px-3"
+              className="flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:text-white sm:h-9 sm:w-auto sm:gap-1.5 sm:rounded-lg sm:px-3"
               title={isVietnamese ? "Feed cộng đồng" : "Community feed"}
               aria-label={isVietnamese ? "Feed cộng đồng" : "Community feed"}
             >
@@ -242,7 +279,7 @@ export function Dashboard() {
 
             <Link
               href="/friends"
-              className="flex size-9 items-center justify-center rounded-full border border-[#c5d2cc] bg-white text-[#527066] transition hover:border-[#d97742] hover:text-[#d97742]"
+              className="flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:text-white"
               title={isVietnamese ? "Bạn bè" : "Friends"}
               aria-label={isVietnamese ? "Bạn bè" : "Friends"}
             >
@@ -254,7 +291,7 @@ export function Dashboard() {
               href="/playground"
               className={cn(
                 buttonVariants({ size: "sm" }),
-                "gap-1.5 border-[#d97742] bg-[#d97742] text-white shadow-sm hover:bg-[#bf6132]"
+                "gap-1.5 border-[#f3a477] bg-[#d97742] text-white shadow-[0_4px_0_#8f4528] hover:bg-[#bf6132]"
               )}
             >
               <Hand className="size-3.5" />
@@ -263,7 +300,7 @@ export function Dashboard() {
 
             <Link
               href="/favorites"
-              className="relative flex size-9 items-center justify-center rounded-full border border-[#c5d2cc] bg-white text-[#527066] transition hover:border-[#d97742] hover:text-[#d97742]"
+              className="relative flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:text-white"
               title={isVietnamese ? "Món yêu thích" : "Favorite recipes"}
               aria-label={isVietnamese ? "Món yêu thích" : "Favorite recipes"}
             >
@@ -272,10 +309,10 @@ export function Dashboard() {
             </Link>
 
             {/* User Profile Link / Logout */}
-            <div className="flex items-center gap-2 border-l border-[#dbe5dd] pl-3">
+            <div className="flex items-center gap-2 border-l border-white/15 pl-2 sm:pl-3">
               <Link
                 href="/profile"
-                className="group flex items-center gap-2 rounded-xl p-1 transition hover:bg-[#e4ece2]"
+                className="group flex items-center gap-2 rounded-xl p-1 transition hover:bg-white/10"
                 title={isVietnamese ? "Hồ sơ cá nhân" : "User Profile"}
               >
                 <div className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#f3d7a3]/40 bg-[#17352d] text-xs font-semibold text-[#f3d7a3] transition group-hover:border-[#d97742]">
@@ -292,10 +329,10 @@ export function Dashboard() {
                   )}
                 </div>
                 <div className="hidden text-left sm:block">
-                  <p suppressHydrationWarning className="text-xs font-semibold leading-none text-[#17352d] transition group-hover:text-[#d97742]">
+                  <p suppressHydrationWarning className="text-xs font-semibold leading-none text-white transition group-hover:text-[#f3d7a3]">
                     {user?.name || (isVietnamese ? "Đầu bếp" : "Chef")}
                   </p>
-                  <p suppressHydrationWarning className="mt-0.5 text-[10px] text-[#527066]">
+                  <p suppressHydrationWarning className="mt-0.5 text-[10px] text-[#b9d1bd]">
                     {user?.email || "user@touchless.io"}
                   </p>
                 </div>
@@ -306,7 +343,7 @@ export function Dashboard() {
                 size="icon"
                 onClick={handleLogout}
                 title={isVietnamese ? "Đăng xuất" : "Logout"}
-                className="size-8 text-[#527066] hover:bg-[#ffebee] hover:text-red-600"
+                className="size-8 text-[#b9d1bd] hover:bg-[#ffebee] hover:text-red-300"
               >
                 <LogOut className="size-4" />
               </Button>
@@ -666,7 +703,7 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setSelectedRecipe(null)}
-                aria-label="Close"
+                aria-label={isVietnamese ? "Đóng" : "Close"}
                 className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-full bg-white/80 text-[#527066] shadow hover:bg-white hover:text-black"
               >
                 <X className="size-5" />
@@ -675,7 +712,7 @@ export function Dashboard() {
               <div className="relative h-56 w-full overflow-hidden rounded-2xl bg-[#e4ece2] sm:h-72">
                 <Image
                   src={selectedRecipe.imageUrl}
-                  alt={selectedRecipe.title}
+                  alt={translateRecipeTitle(selectedRecipe.title, isVietnamese)}
                   fill
                   sizes="(max-width: 768px) 100vw, 672px"
                   className="object-cover"
@@ -716,6 +753,32 @@ export function Dashboard() {
                 </div>
               </div>
 
+              {/* Recipe source */}
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#c5d2cc] bg-white px-4 py-3 text-xs">
+                <Globe className="size-4 shrink-0 text-[#d97742]" aria-hidden="true" />
+                <span className="text-[#527066]">
+                  {isVietnamese ? "Nguồn công thức:" : "Recipe source:"}
+                </span>
+                {selectedRecipe.sourceUrl ? (
+                  <a
+                    href={selectedRecipe.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-[#d97742] hover:underline"
+                  >
+                    {selectedRecipe.source === "TheMealDB" ? "TheMealDB" : selectedRecipe.source}
+                  </a>
+                ) : (
+                  <span className="font-semibold text-[#17352d]">
+                    {selectedRecipe.source === "Community"
+                      ? isVietnamese
+                        ? "Cộng đồng"
+                        : "Community"
+                      : selectedRecipe.source}
+                  </span>
+                )}
+              </div>
+
               {/* Ingredients */}
               {selectedRecipe.ingredients.length > 0 && (
                 <div className="mt-6">
@@ -750,7 +813,12 @@ export function Dashboard() {
                           {step.stepNumber}
                         </span>
                         <p className="text-xs leading-relaxed text-[#527066]">
-                          {translateStepInstruction(step.instruction, isVietnamese)}
+                          {isVietnamese
+                            ? (translatedSteps?.recipeId === selectedRecipe.id
+                                ? translatedSteps.values[step.stepNumber]
+                                : undefined) ||
+                              translateStepInstruction(step.instruction, true)
+                            : step.instruction}
                         </p>
                       </div>
                     ))}

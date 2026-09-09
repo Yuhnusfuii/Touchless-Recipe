@@ -20,6 +20,7 @@ import {
   getSavedMealPlans,
   saveGeneratedMealPlan,
   type GeneratedMealPlan,
+  type MealTime,
 } from "@/lib/api";
 import { MealPlanHeader } from "@/components/meal-plan/MealPlanHeader";
 import { MealPlanIntro } from "@/components/meal-plan/MealPlanIntro";
@@ -39,6 +40,19 @@ const TASTES = [
   ["low-oil", "Ít dầu"],
   ["vegetarian", "Chay"],
 ];
+const MEAL_TIMES: Array<[MealTime, string, string]> = [
+  ["breakfast", "Buổi sáng", "Breakfast"],
+  ["lunch", "Buổi trưa", "Lunch"],
+  ["dinner", "Buổi tối", "Dinner"],
+];
+
+function mealTimeLabel(mealType: string, isVietnamese: boolean) {
+  const normalized = mealType.toLowerCase();
+  if (normalized === "breakfast" || normalized === "sáng") return isVietnamese ? "Buổi sáng" : "Breakfast";
+  if (normalized === "lunch" || normalized === "trưa") return isVietnamese ? "Buổi trưa" : "Lunch";
+  if (normalized === "dinner" || normalized === "tối") return isVietnamese ? "Buổi tối" : "Dinner";
+  return mealType;
+}
 
 function getDate(offset: number) {
   const date = new Date();
@@ -63,13 +77,24 @@ function toIsoDate(displayDate: string) {
     : "";
 }
 
+function formatSavedPlanDate(date: string, isVietnamese: boolean) {
+  const parsedDate = new Date(`${date}T12:00:00`);
+  if (Number.isNaN(parsedDate.getTime())) return date;
+  return parsedDate.toLocaleDateString(isVietnamese ? "vi-VN" : "en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 export default function MealPlanPage() {
   const { isVietnamese } = useLanguage();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [period, setPeriod] = useState<"days" | "week" | "month">("week");
   const [servings, setServings] = useState(2);
-  const [mealsPerDay, setMealsPerDay] = useState(3);
+  const [mealsPerMeal, setMealsPerMeal] = useState(1);
+  const [mealTimes, setMealTimes] = useState<MealTime[]>(["lunch", "dinner"]);
   const [dailyCalories, setDailyCalories] = useState(2000);
   const [goal, setGoal] = useState("balanced");
   const [tastes, setTastes] = useState<string[]>(["vietnamese"]);
@@ -106,6 +131,16 @@ export default function MealPlanPage() {
         : [...current, taste],
     );
 
+  const toggleMealTime = (mealTime: MealTime) => {
+    setMealTimes((current) =>
+      current.includes(mealTime)
+        ? current.length === 1
+          ? current
+          : current.filter((item) => item !== mealTime)
+        : [...current, mealTime],
+    );
+  };
+
   const changePeriod = (nextPeriod: "days" | "week" | "month") => {
     setPeriod(nextPeriod);
     const isoStartDate = toIsoDate(startDate);
@@ -133,7 +168,9 @@ export default function MealPlanPage() {
         endDate: isoEndDate,
         period,
         servings,
-        mealsPerDay,
+        mealsPerDay: mealsPerMeal * mealTimes.length,
+        mealsPerMeal,
+        mealTimes,
         dailyCalories,
         goal,
         tastes,
@@ -234,8 +271,72 @@ export default function MealPlanPage() {
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-12 lg:py-14">
         <MealPlanIntro isVietnamese={isVietnamese} />
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-start">
-          <section className="rounded-3xl border border-[#dbe5dd] bg-white p-5 shadow-sm sm:p-7">
+        {savedPlans.length > 0 && (
+          <section className="mt-8 rounded-3xl border border-[#dbe5dd] bg-[#eef4ed] p-5 sm:p-7">
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#d97742]">
+                  {isVietnamese ? "Kho lưu trữ" : "Your collection"}
+                </p>
+                <h2 className="mt-1 font-serif text-3xl text-[#17352d]">
+                  {isVietnamese ? "Thực đơn đã lưu" : "Saved meal plans"}
+                </h2>
+              </div>
+              <Link
+                href="/profile"
+                className="text-sm font-semibold text-[#c56537] hover:text-[#17352d]"
+              >
+                {isVietnamese ? "Xem hồ sơ" : "View profile"}
+              </Link>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {[...savedPlans]
+                .sort((left, right) => right.startDate.localeCompare(left.startDate))
+                .map((savedPlan) => {
+                  const planId = savedPlan.id || savedPlan._id;
+                  return (
+                    <div
+                      key={planId || `${savedPlan.startDate}-${savedPlan.endDate}`}
+                      className="group flex min-w-0 items-center gap-3 rounded-2xl border border-[#d6e3d7] bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#d97742] hover:shadow-md"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setPlan(savedPlan)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <span className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#c56537]">
+                          <span>{isVietnamese ? "Khoảng ngày nấu" : "Cooking dates"}</span>
+                          <span className="h-px w-8 bg-[#f0b28f]" />
+                        </span>
+                        <span className="mt-2 block text-base font-bold text-[#17352d] sm:text-lg">
+                          {formatSavedPlanDate(savedPlan.startDate, isVietnamese)}
+                          <span className="mx-2 text-[#d97742]">→</span>
+                          {formatSavedPlanDate(savedPlan.endDate, isVietnamese)}
+                        </span>
+                        <span className="mt-1 block text-xs text-[#527066]">
+                          {savedPlan.days.length} {isVietnamese ? "ngày" : "days"} · {savedPlan.mealsPerMeal} {isVietnamese ? "món/buổi" : "dishes/meal"} · {savedPlan.mealsPerDay} {isVietnamese ? "món/ngày" : "meals/day"}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        title={isVietnamese ? "Xóa thực đơn" : "Delete meal plan"}
+                        aria-label={isVietnamese ? "Xóa thực đơn" : "Delete meal plan"}
+                        onClick={() => deletePlan(savedPlan)}
+                        disabled={deletingPlanId === planId}
+                        className="flex size-9 shrink-0 items-center justify-center rounded-xl text-[#b4573b] transition hover:bg-[#fff0eb] disabled:cursor-wait disabled:opacity-50"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                      <ArrowLeft className="size-4 shrink-0 rotate-180 text-[#d97742]" />
+                    </div>
+                  );
+                })}
+            </div>
+          </section>
+        )}
+
+        <div className="mt-10 space-y-8">
+          <section className="mx-auto w-full max-w-5xl rounded-3xl border border-[#dbe5dd] bg-white p-5 shadow-sm sm:p-7">
             <div className="flex items-center gap-3 border-b border-[#e4ece2] pb-5">
               <span className="flex size-10 items-center justify-center rounded-xl bg-[#17352d] text-[#f3d7a3]">
                 <CalendarDays className="size-5" />
@@ -311,16 +412,33 @@ export default function MealPlanPage() {
                 className="mt-2 h-11 w-full rounded-xl border border-[#c5d2cc] px-3 text-sm font-normal outline-none focus:border-[#d97742]"
               />
             </label>
+            <fieldset className="mt-5">
+              <legend className="text-sm font-semibold">
+                {isVietnamese ? "Nấu cho buổi nào?" : "Which meals to cook?"}
+              </legend>
+              <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                {MEAL_TIMES.map(([value, vi, en]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => toggleMealTime(value)}
+                    className={`rounded-xl border px-3 py-2.5 text-left text-xs font-semibold transition ${mealTimes.includes(value) ? "border-[#17352d] bg-[#17352d] text-white" : "border-[#dbe5dd] bg-[#f8faf7] text-[#527066] hover:border-[#d97742]"}`}
+                  >
+                    {isVietnamese ? vi : en}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-semibold">
-                {isVietnamese ? "Số món mỗi ngày" : "Meals per day"}
+                {isVietnamese ? "Số món cho mỗi bữa" : "Dishes per meal"}
                 <input
                   type="number"
                   min={1}
                   max={6}
-                  value={mealsPerDay}
+                  value={mealsPerMeal}
                   onChange={(event) =>
-                    setMealsPerDay(
+                    setMealsPerMeal(
                       Math.min(6, Math.max(1, Number(event.target.value))),
                     )
                   }
@@ -430,9 +548,9 @@ export default function MealPlanPage() {
             </Button>
           </section>
 
-          <section className="min-h-[560px] rounded-3xl bg-[#17352d] p-5 text-white shadow-xl sm:p-7">
+          <section className="min-h-[420px] rounded-3xl bg-[#17352d] p-4 text-white shadow-xl sm:min-h-[560px] sm:p-7">
             {!plan && !isGenerating && (
-              <div className="flex min-h-[500px] flex-col items-center justify-center text-center">
+              <div className="flex min-h-[360px] flex-col items-center justify-center text-center sm:min-h-[500px]">
                 <div className="flex size-16 items-center justify-center rounded-2xl bg-[#f3d7a3] text-[#17352d]">
                   <CalendarDays className="size-8" />
                 </div>
@@ -449,7 +567,7 @@ export default function MealPlanPage() {
               </div>
             )}
             {isGenerating && (
-              <div className="flex min-h-[500px] flex-col items-center justify-center text-center">
+              <div className="flex min-h-[360px] flex-col items-center justify-center text-center sm:min-h-[500px]">
                 <span className="size-12 animate-spin rounded-full border-4 border-white/20 border-t-[#f3d7a3]" />
                 <h2 className="mt-6 font-serif text-3xl">
                   {isVietnamese ? "Đang nấu ý tưởng..." : "Cooking up ideas..."}
@@ -488,16 +606,28 @@ export default function MealPlanPage() {
                       {isVietnamese ? "món/ngày" : "meals/day"}
                     </span>
                     <span className="rounded-full bg-white/10 px-3 py-1.5">
+                      {plan.mealsPerMeal}{" "}
+                      {isVietnamese ? "món/buổi" : "dishes/meal"}
+                    </span>
+                    <span className="rounded-full bg-white/10 px-3 py-1.5">
                       {plan.dailyCalories.toLocaleString()} kcal/day
                     </span>
                   </div>
                 </div>
                 <div className="mt-6 space-y-5">
-                  {plan.days.map((day) => (
-                    <article
-                      key={day.date}
-                      className="rounded-2xl border border-white/10 bg-white/5 p-4"
-                    >
+                  {plan.days.map((day) => {
+                    const mealsByTime = day.meals.reduce<Record<string, typeof day.meals>>((groups, meal) => {
+                      const group = groups[meal.mealType] || [];
+                      group.push(meal);
+                      groups[meal.mealType] = group;
+                      return groups;
+                    }, {});
+
+                    return (
+                      <article
+                        key={day.date}
+                        className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                      >
                       <div className="flex items-center justify-between gap-3">
                         <h3 className="font-semibold">
                           {new Date(`${day.date}T12:00:00`).toLocaleDateString(
@@ -513,29 +643,36 @@ export default function MealPlanPage() {
                           kcal
                         </span>
                       </div>
-                      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                        {day.meals.map((meal) => (
-                          <div
-                            key={`${day.date}-${meal.mealType}`}
-                            className="rounded-xl bg-[#0f2922] p-3"
-                          >
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-[#f3d7a3]">
-                              {meal.mealType}
-                            </p>
-                            <p className="mt-1 text-sm font-semibold text-white">
-                              {meal.name}
-                            </p>
-                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/55">
-                              {meal.description}
-                            </p>
-                            <p className="mt-2 text-[11px] text-white/45">
-                              {meal.ingredients.join(", ")}
-                            </p>
-                          </div>
+                      <div className="mt-4 space-y-4">
+                        {Object.entries(mealsByTime).map(([mealType, meals]) => (
+                          <section key={`${day.date}-${mealType}`}>
+                            <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#f3d7a3]">
+                              {mealTimeLabel(mealType, isVietnamese)}
+                            </h4>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {meals.map((meal, mealIndex) => (
+                                <div
+                                  key={`${day.date}-${mealType}-${mealIndex}`}
+                                  className="rounded-xl bg-[#0f2922] p-3"
+                                >
+                                  <p className="text-sm font-semibold text-white">
+                                    {meal.name}
+                                  </p>
+                                  <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/55">
+                                    {meal.description}
+                                  </p>
+                                  <p className="mt-2 text-[11px] text-white/45">
+                                    {meal.ingredients.join(", ")}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </section>
                         ))}
                       </div>
-                    </article>
-                  ))}
+                      </article>
+                    );
+                  })}
                 </div>
                 {!plan.id && (
                   <button
@@ -566,55 +703,6 @@ export default function MealPlanPage() {
             )}
           </section>
         </div>
-        {savedPlans.length > 0 && (
-          <section className="mt-8 max-w-3xl">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-serif text-2xl">
-                {isVietnamese ? "Thực đơn đã lưu" : "Saved meal plans"}
-              </h2>
-              <Link
-                href="/profile"
-                className="text-sm font-semibold text-[#d97742] hover:underline"
-              >
-                {isVietnamese ? "Xem hồ sơ" : "View profile"}
-              </Link>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {savedPlans.map((savedPlan) => (
-                <div
-                  key={savedPlan.id}
-                  className="flex items-center gap-2 rounded-xl border border-[#dbe5dd] bg-white px-4 py-3 text-left shadow-sm transition hover:border-[#d97742]"
-                >
-                  <button
-                    type="button"
-                    onClick={() => setPlan(savedPlan)}
-                    className="min-w-0 flex-1 text-left"
-                  >
-                    <span className="block text-sm font-bold">
-                      {savedPlan.startDate} - {savedPlan.endDate}
-                    </span>
-                    <span className="mt-1 block text-xs text-[#527066]">
-                      {savedPlan.days.length} {isVietnamese ? "ngày" : "days"} ·{" "}
-                      {savedPlan.mealsPerDay}{" "}
-                      {isVietnamese ? "món/ngày" : "meals/day"}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    title={isVietnamese ? "Xóa thực đơn" : "Delete meal plan"}
-                    aria-label={isVietnamese ? "Xóa thực đơn" : "Delete meal plan"}
-                    onClick={() => deletePlan(savedPlan)}
-                    disabled={deletingPlanId === (savedPlan.id || savedPlan._id)}
-                    className="flex size-9 shrink-0 items-center justify-center rounded-lg text-[#b4573b] transition hover:bg-[#fff0eb] disabled:cursor-wait disabled:opacity-50"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
-                  <ArrowLeft className="size-4 shrink-0 rotate-180 text-[#d97742]" />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
       </div>
     </main>
   );

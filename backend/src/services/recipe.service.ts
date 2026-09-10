@@ -11,6 +11,7 @@ export interface StandardRecipe {
   calories: number;
   imageUrl: string;
   videoUrl?: string;
+  sourceUrl?: string;
   source: "TheMealDB" | "Community";
   ingredients: Array<{
     name: string;
@@ -24,6 +25,25 @@ export interface StandardRecipe {
 }
 
 export class RecipeService {
+  private getMealSourceUrl(meal: any): string | undefined {
+    const mealId = typeof meal.idMeal === "string" ? meal.idMeal.trim() : "";
+    if (!mealId) return undefined;
+
+    const declaredSource = typeof meal.strSource === "string" ? meal.strSource.trim() : "";
+    if (declaredSource) {
+      try {
+        const sourceUrl = new URL(declaredSource);
+        if (sourceUrl.protocol === "http:" || sourceUrl.protocol === "https:") {
+          return sourceUrl.toString();
+        }
+      } catch {
+        // Use the verified TheMealDB page when the declared source is malformed.
+      }
+    }
+
+    return `https://www.themealdb.com/meal/${mealId}`;
+  }
+
   private formatMealDBRecipe(meal: any): StandardRecipe {
     // Extract ingredients & measures
     const ingredients: Array<{ name: string; measure: string }> = [];
@@ -81,6 +101,7 @@ export class RecipeService {
       calories,
       imageUrl: meal.strMealThumb || "/images/roasted-harvest-bowl.jpg",
       videoUrl: meal.strYoutube || undefined,
+      sourceUrl: this.getMealSourceUrl(meal),
       source: "TheMealDB",
       ingredients,
       steps,
@@ -113,7 +134,7 @@ export class RecipeService {
 
       // If category filter was used, TheMealDB filter.php only returns idMeal, strMeal, strMealThumb.
       // We hydrate the first few items to have full step details.
-      const mealsToProcess = data.meals.slice(0, limit);
+      const mealsToProcess = data.meals.filter((meal: any) => meal?.idMeal).slice(0, limit);
       const formatted: StandardRecipe[] = [];
 
       for (const meal of mealsToProcess) {

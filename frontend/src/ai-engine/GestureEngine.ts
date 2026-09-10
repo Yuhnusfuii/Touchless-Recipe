@@ -8,18 +8,20 @@ export interface Landmark {
 }
 
 // MediaPipe landmarks scale from 0 to 1 (relative to image width/height)
-const THRESHOLD_SWIPE_X = 0.05; // 5% of screen width (very sensitive now)
+const THRESHOLD_SWIPE_X = 0.08;
 const THRESHOLD_SWIPE_Y = 0.20; 
 
 export class GestureEngine {
   private state: GestureState = "IDLE";
   private candidateGesture: DetectedGesture = "NONE";
   private startLandmarks: Landmark[] | null = null;
+  private smoothedWrist: { x: number; y: number } | null = null;
   private startTime: number = 0;
   
   // Timings (in ms)
-  private readonly CANDIDATE_DURATION = 150; 
+  private readonly CANDIDATE_DURATION = 180;
   private readonly COOLDOWN_DURATION = 1000; 
+  private readonly POSITION_SMOOTHING = 0.35;
 
   private lastActionTime: number = 0;
 
@@ -50,6 +52,7 @@ export class GestureEngine {
 
     if (this.state === "IDLE") {
       this.startLandmarks = landmarks;
+      this.smoothedWrist = { x: landmarks[0].x, y: landmarks[0].y };
       this.startTime = now;
       this.transitionTo("CANDIDATE");
       return;
@@ -58,12 +61,24 @@ export class GestureEngine {
     if (this.state === "CANDIDATE") {
       if (!this.startLandmarks) return;
 
+      const wrist = landmarks[0];
+      const previousWrist = this.smoothedWrist ?? wrist;
+      this.smoothedWrist = {
+        x: previousWrist.x + (wrist.x - previousWrist.x) * this.POSITION_SMOOTHING,
+        y: previousWrist.y + (wrist.y - previousWrist.y) * this.POSITION_SMOOTHING,
+      };
+
       const timeElapsed = now - this.startTime;
       if (timeElapsed < this.CANDIDATE_DURATION) {
         return;
       }
 
-      const gesture = this.evaluateMath(this.startLandmarks, landmarks);
+      const filteredLandmarks = landmarks.map((landmark, index) =>
+        index === 0
+          ? { ...landmark, x: this.smoothedWrist!.x, y: this.smoothedWrist!.y }
+          : landmark
+      );
+      const gesture = this.evaluateMath(this.startLandmarks, filteredLandmarks);
 
       if (gesture !== "NONE") {
         this.candidateGesture = gesture;
@@ -119,6 +134,7 @@ export class GestureEngine {
     if (newState === "IDLE") {
       this.candidateGesture = "NONE";
       this.startLandmarks = null;
+      this.smoothedWrist = null;
     }
   }
 

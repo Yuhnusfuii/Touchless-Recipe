@@ -274,25 +274,10 @@ export default function PlaygroundPage() {
   const [speechVoices, setSpeechVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [assistantConversation, setAssistantConversation] = useState<Array<{ role: "user" | "assistant"; text: string }>>([]);
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const voiceSessionActiveRef = useRef(false);
+  const voiceRestartTimeoutRef = useRef<number | null>(null);
 
   const gestureEngineRef = useRef<GestureEngine>(new GestureEngine());
-
-  const finishCooking = () => {
-    setShowFinishConfirmation(false);
-    setIsTimerRunning(false);
-    localStorage.removeItem("active_cooking_progress");
-    window.dispatchEvent(new Event("cooking-progress-change"));
-    if (recipe.returnPath === "/smart-fridge" && recipe.fridgeMealId) {
-      markSmartFridgeMealComplete(recipe.fridgeMealId);
-    }
-    void trackCookingActivity({
-      recipeId: recipe.id,
-      currentStepIndex: recipe.steps.length - 1,
-      totalSteps: recipe.steps.length,
-      isHandsFree: true,
-    });
-    router.replace(recipe.returnPath || "/");
-  };
 
   useEffect(() => {
     let storedRecipe: RecipeItem | null = null;
@@ -460,6 +445,34 @@ export default function PlaygroundPage() {
     window.speechSynthesis.speak(message);
   }, [speechVoices]);
 
+  const finishCooking = useCallback(() => {
+    voiceSessionActiveRef.current = false;
+    if (voiceRestartTimeoutRef.current !== null) {
+      window.clearTimeout(voiceRestartTimeoutRef.current);
+      voiceRestartTimeoutRef.current = null;
+    }
+    recognitionRef.current?.stop();
+    setShowFinishConfirmation(false);
+    setIsTimerRunning(false);
+    localStorage.removeItem("active_cooking_progress");
+    window.dispatchEvent(new Event("cooking-progress-change"));
+    if (recipe.returnPath === "/smart-fridge" && recipe.fridgeMealId) {
+      markSmartFridgeMealComplete(recipe.fridgeMealId);
+    }
+    void trackCookingActivity({
+      recipeId: recipe.id,
+      currentStepIndex: recipe.steps.length - 1,
+      totalSteps: recipe.steps.length,
+      isHandsFree: true,
+    });
+    speakAssistantReply(
+      isVietnamese
+        ? "Chúc mừng bạn đã hoàn thành món ăn! Món ăn thật tuyệt vời, chúc bạn ngon miệng!"
+        : "Congratulations on completing your meal! It looks wonderful. Enjoy your food!"
+    );
+    window.setTimeout(() => router.replace(recipe.returnPath || "/"), 3500);
+  }, [isVietnamese, recipe, router, speakAssistantReply]);
+
   // Navigation handlers
   const handleNextStep = useCallback(() => {
     if (currentStepIndex < recipe.steps.length - 1) {
@@ -500,7 +513,7 @@ export default function PlaygroundPage() {
     }
   }, [currentStepIndex, isVietnamese, recipe]);
 
-  const selectStepByIndex = (idx: number) => {
+  const selectStepByIndex = useCallback((idx: number) => {
     setCurrentStepIndex(idx);
     setIsTimerRunning(false);
     setTimerSeconds(getRecipeStepDuration(recipe, idx));
@@ -520,7 +533,7 @@ export default function PlaygroundPage() {
         setTimeout(() => setCompletionNotice(""), 6000);
       }
     });
-  };
+  }, [isVietnamese, recipe]);
 
   // Initialize MediaPipe HandLandmarker
   useEffect(() => {
@@ -579,21 +592,30 @@ export default function PlaygroundPage() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (results.landmarks && results.landmarks.length > 0) {
-              results.landmarks.forEach((hand) => {
-                // Pass landmarks to Gesture Engine
-                gestureEngineRef.current.processFrame(hand, (gesture) => {
-                  setLastGesture(gesture);
+              const activeHand = results.landmarks.reduce((largestHand, hand) => {
+                const getArea = (candidate: typeof hand) => {
+                  const xValues = candidate.map((point) => point.x);
+                  const yValues = candidate.map((point) => point.y);
+                  return (Math.max(...xValues) - Math.min(...xValues)) * (Math.max(...yValues) - Math.min(...yValues));
+                };
+                return getArea(hand) > getArea(largestHand) ? hand : largestHand;
+              });
 
-                  // Map gestures to cooking actions
-                  // Note: Due to mirror effect (-scale-x-100), SWIPE_RIGHT on camera equals physical swipe left, etc.
-                  if (gesture === "SWIPE_RIGHT" || gesture === "SWIPE_LEFT") {
-                    if (gesture === "SWIPE_RIGHT") {
-                      handleNextStep();
-                    } else {
-                      handlePrevStep();
+              results.landmarks.forEach((hand) => {
+                if (hand === activeHand) {
+                  gestureEngineRef.current.processFrame(hand, (gesture) => {
+                    setLastGesture(gesture);
+
+                    // Note: Due to mirror effect (-scale-x-100), SWIPE_RIGHT on camera equals physical swipe left, etc.
+                    if (gesture === "SWIPE_RIGHT" || gesture === "SWIPE_LEFT") {
+                      if (gesture === "SWIPE_RIGHT") {
+                        handleNextStep();
+                      } else {
+                        handlePrevStep();
+                      }
                     }
-                  }
-                });
+                  });
+                }
 
                 // Draw hand landmarks overlay
                 hand.forEach((point) => {
@@ -626,7 +648,12 @@ export default function PlaygroundPage() {
       return;
     }
 
-    if (isListening) {
+    if (voiceSessionActiveRef.current) {
+      voiceSessionActiveRef.current = false;
+      if (voiceRestartTimeoutRef.current !== null) {
+        window.clearTimeout(voiceRestartTimeoutRef.current);
+        voiceRestartTimeoutRef.current = null;
+      }
       if (recognitionRef.current) recognitionRef.current.stop();
       setIsListening(false);
       return;
@@ -635,6 +662,7 @@ export default function PlaygroundPage() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
+    voiceSessionActiveRef.current = true;
     const recognition = new SpeechRecognition();
     recognition.lang = VOICE_ASSISTANT_LOCALE;
     recognition.interimResults = false;
@@ -647,50 +675,118 @@ export default function PlaygroundPage() {
 
     recognition.onresult = async (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0]?.[0]?.transcript.toLowerCase() || "";
+      const commandText = transcript.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       setVoiceLog(`"${transcript}"`);
       let reply = `Mình nghe thấy: ${transcript}. Bạn có thể nói tiếp theo, quay lại, đọc hướng dẫn hoặc bắt đầu hẹn giờ.`;
       let handledLocally = false;
 
       // Voice commands handling
-      if (
-        transcript.includes("tiếp theo") ||
-        transcript.includes("tiếp") ||
-        transcript.includes("next") ||
-        transcript.includes("bước sau")
+      if (showFinishConfirmation && /^(co|yes|xac nhan|dong y|tiep tuc)$/.test(commandText.trim())) {
+        finishCooking();
+        reply = "Đã xác nhận hoàn thành. Chúc mừng bạn đã hoàn thành món ăn!";
+        handledLocally = true;
+      } else if (showFinishConfirmation && /^(khong|no|huy|cancel)$/.test(commandText.trim())) {
+        setShowFinishConfirmation(false);
+        reply = "Mình đã hủy hoàn thành món. Bạn có thể tiếp tục nấu.";
+        handledLocally = true;
+      } else if (
+        commandText.includes("tiep theo") ||
+        commandText === "tiep" ||
+        commandText.includes("next") ||
+        commandText.includes("buoc sau")
       ) {
         handleNextStep();
         reply = "Đã chuyển sang bước tiếp theo. Mình sẽ đồng hành cùng bạn.";
         handledLocally = true;
       } else if (
-        transcript.includes("quay lại") ||
-        transcript.includes("trước") ||
-        transcript.includes("back") ||
-        transcript.includes("previous")
+        commandText.includes("quay lai") ||
+        commandText.includes("buoc truoc") ||
+        commandText.includes("back") ||
+        commandText.includes("previous")
       ) {
         handlePrevStep();
         reply = "Đã quay lại bước trước để bạn kiểm tra.";
         handledLocally = true;
       } else if (
-        transcript.includes("đọc") ||
-        transcript.includes("read") ||
-        transcript.includes("hướng dẫn")
+        commandText.includes("doc") ||
+        commandText.includes("read") ||
+        commandText.includes("huong dan")
       ) {
         speakCurrentStep();
         reply = "Mình sẽ đọc hướng dẫn của bước hiện tại.";
         handledLocally = true;
       } else if (
-        transcript.includes("bắt đầu") ||
-        transcript.includes("hẹn giờ") ||
-        transcript.includes("timer") ||
-        transcript.includes("start")
+        (commandText.includes("bat dau") || commandText.includes("start")) &&
+        (commandText.includes("hen gio") || commandText.includes("timer") || commandText.includes("dem nguoc"))
       ) {
         setIsTimerRunning(true);
         reply = "Đã bắt đầu hẹn giờ cho bước này.";
         handledLocally = true;
-      } else if (transcript.includes("dừng") || transcript.includes("pause") || transcript.includes("stop")) {
+      } else if (commandText.includes("dat lai") || commandText.includes("reset") || commandText.includes("restart")) {
+        setIsTimerRunning(false);
+        setTimerSeconds(getRecipeStepDuration(recipe, currentStepIndex));
+        reply = "Đã đặt lại hẹn giờ cho bước hiện tại.";
+        handledLocally = true;
+      } else if (commandText.includes("dung hen gio") || commandText.includes("pause") || commandText.includes("stop timer")) {
         setIsTimerRunning(false);
         reply = "Đã tạm dừng hẹn giờ.";
         handledLocally = true;
+      } else if (commandText.includes("bat camera") || commandText.includes("mo camera") || commandText.includes("camera on")) {
+        setIsCameraEnabled(true);
+        reply = "Đã bật camera và nhận diện cử chỉ.";
+        handledLocally = true;
+      } else if (commandText.includes("tat camera") || commandText.includes("dong camera") || commandText.includes("camera off")) {
+        setIsCameraEnabled(false);
+        reply = "Đã tắt camera.";
+        handledLocally = true;
+      } else if (commandText.includes("an camera") || commandText.includes("hide camera")) {
+        setIsCameraVisible(false);
+        reply = "Đã ẩn camera, nhận diện vẫn tiếp tục hoạt động.";
+        handledLocally = true;
+      } else if (commandText.includes("hien camera") || commandText.includes("show camera")) {
+        setIsCameraVisible(true);
+        reply = "Đã hiện camera.";
+        handledLocally = true;
+      } else if (commandText.includes("tieng viet") || commandText.includes("vietnamese") || commandText === "vi") {
+        setLanguage("vi");
+        reply = "Đã chuyển sang tiếng Việt.";
+        handledLocally = true;
+      } else if (commandText.includes("tieng anh") || commandText.includes("english") || commandText === "en") {
+        setLanguage("en");
+        reply = "Switched to English.";
+        handledLocally = true;
+      } else if (commandText.includes("hoan thanh") || commandText.includes("complete meal") || commandText.includes("finish cooking")) {
+        setShowFinishConfirmation(true);
+        reply = "Bạn có chắc muốn hoàn thành món ăn không? Hãy nói có để xác nhận hoặc không để tiếp tục nấu.";
+        handledLocally = true;
+      } else if (commandText.includes("dung tro ly") || commandText.includes("tat tro ly") || commandText.includes("stop listening")) {
+        voiceSessionActiveRef.current = false;
+        recognition.stop();
+        setIsListening(false);
+        reply = "Mình đã dừng trợ lý giọng nói.";
+        handledLocally = true;
+      } else {
+        const stepMatch = commandText.match(/\b(?:buoc|step)\s*(\d+)\b/);
+        if (stepMatch) {
+          const requestedStep = Number(stepMatch[1]) - 1;
+          if (requestedStep >= 0 && requestedStep < recipe.steps.length) {
+            selectStepByIndex(requestedStep);
+            reply = `Đã chuyển đến bước ${requestedStep + 1}.`;
+          } else {
+            reply = `Món này chỉ có ${recipe.steps.length} bước.`;
+          }
+          handledLocally = true;
+        } else {
+          const ingredientIndex = recipe.ingredients.findIndex((ingredient) => {
+            const ingredientName = ingredient.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            return commandText.includes(ingredientName);
+          });
+          if (ingredientIndex >= 0 && (commandText.includes("danh dau") || commandText.includes("check") || commandText.includes("chuan bi"))) {
+            setCheckedIngredients((previous) => ({ ...previous, [ingredientIndex]: true }));
+            reply = `Đã đánh dấu ${recipe.ingredients[ingredientIndex].name} là đã chuẩn bị.`;
+            handledLocally = true;
+          }
+        }
       }
 
       if (handledLocally) {
@@ -721,16 +817,42 @@ export default function PlaygroundPage() {
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       setVoiceLog(`Voice error: ${event.error}`);
-      setIsListening(false);
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        voiceSessionActiveRef.current = false;
+        setIsListening(false);
+      }
     };
 
     recognition.onend = () => {
       setIsListening(false);
+      if (voiceSessionActiveRef.current) {
+        voiceRestartTimeoutRef.current = window.setTimeout(() => {
+          voiceRestartTimeoutRef.current = null;
+          if (!voiceSessionActiveRef.current) return;
+          try {
+            recognition.start();
+          } catch {
+            if (voiceSessionActiveRef.current) {
+              recognition.onend?.();
+            }
+          }
+        }, 250);
+      }
     };
 
     recognitionRef.current = recognition;
     recognition.start();
-  }, [assistantConversation, currentStepIndex, getStepText, handleNextStep, handlePrevStep, isListening, isTimerRunning, isVietnamese, recipe, speakAssistantReply, speakCurrentStep, timerSeconds]);
+  }, [assistantConversation, currentStepIndex, finishCooking, getStepText, handleNextStep, handlePrevStep, isTimerRunning, isVietnamese, recipe, selectStepByIndex, setLanguage, speakAssistantReply, speakCurrentStep, timerSeconds, showFinishConfirmation]);
+
+  useEffect(() => {
+    return () => {
+      voiceSessionActiveRef.current = false;
+      if (voiceRestartTimeoutRef.current !== null) {
+        window.clearTimeout(voiceRestartTimeoutRef.current);
+      }
+      recognitionRef.current?.stop();
+    };
+  }, []);
 
   const formatTimer = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);

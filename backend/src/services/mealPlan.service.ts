@@ -9,6 +9,8 @@ export type GenerateMealPlanDTO = {
   period: "days" | "week" | "month";
   servings: number;
   mealsPerDay: number;
+  mealsPerMeal: number;
+  mealTimes: Array<"breakfast" | "lunch" | "dinner">;
   dailyCalories: number;
   goal: string;
   tastes: string[];
@@ -41,16 +43,25 @@ export class MealPlanService {
   async generateMealPlan(data: GenerateMealPlanDTO) {
     const apiKey = process.env["GEMINI_API_KEY"];
     if (!apiKey) throw Object.assign(new Error("GEMINI_API_KEY is not configured"), { statusCode: 503 });
+    const mealTimes = data.mealTimes.filter((mealTime, index, values) =>
+      ["breakfast", "lunch", "dinner"].includes(mealTime) && values.indexOf(mealTime) === index,
+    );
+    const requestedMealTimes = mealTimes.length > 0 ? mealTimes : ["lunch", "dinner"] as const;
+    const requestedMealsPerMeal = Math.max(1, Math.min(6, Math.floor(data.mealsPerMeal)));
+    const requestedMealsPerDay = requestedMealTimes.length * requestedMealsPerMeal;
+    const mealLabels = requestedMealTimes.map((mealTime) =>
+      mealTime === "breakfast" ? "Breakfast" : mealTime === "lunch" ? "Lunch" : "Dinner",
+    ).join(", ");
     const prompt = data.language === "vi"
-      ? `Tạo kế hoạch bữa ăn từ ${data.startDate} đến ${data.endDate}. Số người: ${data.servings}. Số món mỗi ngày: ${data.mealsPerDay}. Mục tiêu kcal mỗi ngày: ${data.dailyCalories}. Mục tiêu: ${data.goal}. Khẩu vị: ${data.tastes.join(", ") || "đa dạng"}. Ngân sách tổng: ${data.budget}. Nguyên liệu đang có: ${data.availableIngredients.join(", ") || "không có"}. Ưu tiên dùng nguyên liệu có sẵn, phù hợp ngân sách, mục tiêu và tổng kcal mỗi ngày. Mỗi ngày phải có đúng ${data.mealsPerDay} món, chia theo bữa hợp lý. Trả về JSON duy nhất dạng {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"Breakfast","name":"","description":"","ingredients":[],"calories":0}]}]}. Tối đa 31 ngày.`
-      : `Create a meal plan from ${data.startDate} to ${data.endDate}. Servings: ${data.servings}. Meals per day: ${data.mealsPerDay}. Daily calorie target: ${data.dailyCalories} kcal. Goal: ${data.goal}. Tastes: ${data.tastes.join(", ") || "varied"}. Total budget: ${data.budget}. Available ingredients: ${data.availableIngredients.join(", ") || "none"}. Prioritize available ingredients and respect budget, goal, and daily calories. Return exactly ${data.mealsPerDay} meals per day, distributed across meal types. Return only JSON shaped as {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"Breakfast","name":"","description":"","ingredients":[],"calories":0}]}]}. Maximum 31 days.`;
+      ? `Tạo kế hoạch bữa ăn từ ${data.startDate} đến ${data.endDate}. Số người: ${data.servings}. Mỗi buổi đã chọn (${mealLabels}) phải có đúng ${requestedMealsPerMeal} món, tổng cộng ${requestedMealsPerDay} món mỗi ngày. Chỉ tạo món cho các buổi đã chọn, không thêm buổi khác và không được bỏ sót buổi nào. Món ăn phải dễ nấu tại nhà, ưu tiên thời gian chuẩn bị và nấu không quá 45 phút, nguyên liệu dễ tìm và hướng dẫn đơn giản. Các ngày phải phong phú: không lặp lại cùng một món, thay đổi nguồn đạm, rau củ và cách chế biến. Tuân thủ đồng thời mục tiêu ${data.goal}, khẩu vị ${data.tastes.join(", ") || "đa dạng"}, ngân sách ${data.budget}, nguyên liệu sẵn có ${data.availableIngredients.join(", ") || "không có"}, số người ${data.servings} và tổng ${data.dailyCalories} kcal mỗi ngày. Trả về JSON duy nhất dạng {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"${mealLabels.split(", ")[0]}","name":"","description":"","ingredients":[],"calories":0}]}]}. Tối đa 31 ngày.`
+      : `Create a meal plan from ${data.startDate} to ${data.endDate}. Servings: ${data.servings}. For EACH selected meal time (${mealLabels}), return exactly ${requestedMealsPerMeal} dishes, for a total of ${requestedMealsPerDay} dishes per day. Create dishes only for the selected meal times, do not add unselected times, and do not omit any selected time. Every dish must be easy to cook at home, preferably ready within 45 minutes with accessible ingredients and simple instructions. Keep the days varied: do not repeat the same dish, rotate proteins, vegetables, and cooking methods. Satisfy all entered criteria together: goal ${data.goal}, tastes ${data.tastes.join(", ") || "varied"}, budget ${data.budget}, available ingredients ${data.availableIngredients.join(", ") || "none"}, servings ${data.servings}, and ${data.dailyCalories} kcal per day. Return only JSON shaped as {"days":[{"date":"YYYY-MM-DD","meals":[{"mealType":"${mealLabels.split(", ")[0]}","name":"","description":"","ingredients":[],"calories":0}]}]}. Maximum 31 days.`;
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${process.env["GEMINI_MODEL"] || "gemini-3.5-flash-lite"}:generateContent?key=${encodeURIComponent(apiKey)}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.25, responseMimeType: "application/json" } }), signal: AbortSignal.timeout(30000),
     });
     if (!response.ok) throw Object.assign(new Error(`Gemini: ${await response.text()}`), { statusCode: response.status === 429 ? 429 : 502 });
     const payload = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
     const days = parsePlan(payload.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
-    return { ...data, days };
+    return { ...data, mealsPerDay: requestedMealsPerDay, mealsPerMeal: requestedMealsPerMeal, mealTimes: requestedMealTimes, days };
   }
 
   async saveGeneratedMealPlan(data: SaveGeneratedMealPlanDTO) {

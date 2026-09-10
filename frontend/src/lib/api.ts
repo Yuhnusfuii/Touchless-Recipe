@@ -47,6 +47,8 @@ export interface GeneratedMealPlanDay {
   meals: Array<{ mealType: string; name: string; description: string; ingredients: string[]; calories: number }>
 }
 
+export type MealTime = "breakfast" | "lunch" | "dinner";
+
 export interface GeneratedMealPlan {
   id?: string
   _id?: string
@@ -55,6 +57,8 @@ export interface GeneratedMealPlan {
   period: "days" | "week" | "month"
   servings: number
   mealsPerDay: number
+  mealsPerMeal: number
+  mealTimes: MealTime[]
   dailyCalories: number
   goal: string
   tastes: string[]
@@ -68,6 +72,10 @@ function normalizeGeneratedMealPlan(plan: GeneratedMealPlan): GeneratedMealPlan 
     ...plan,
     id: plan.id || plan._id,
     mealsPerDay: typeof plan.mealsPerDay === "number" ? plan.mealsPerDay : 3,
+    mealsPerMeal: typeof plan.mealsPerMeal === "number" ? plan.mealsPerMeal : 1,
+    mealTimes: Array.isArray(plan.mealTimes) && plan.mealTimes.length > 0
+      ? plan.mealTimes
+      : ["lunch", "dinner"],
     dailyCalories: typeof plan.dailyCalories === "number" ? plan.dailyCalories : 2000,
     days: Array.isArray(plan.days) ? plan.days : [],
   }
@@ -322,6 +330,7 @@ export interface RecipeItem {
   calories: number;
   imageUrl: string;
   videoUrl?: string;
+  sourceUrl?: string;
   source: string;
   returnPath?: "/" | "/smart-fridge";
   fridgeMealId?: string;
@@ -379,8 +388,11 @@ export const recipeApi = {
       };
       const meals = directData.meals || [];
 
-      return meals.slice(0, limit).map((m, idx: number) => ({
-        id: m["idMeal"] || String(idx + 1),
+      return meals
+        .filter((m) => typeof m["idMeal"] === "string" && m["idMeal"])
+        .slice(0, limit)
+        .map((m, idx) => ({
+        id: m["idMeal"] as string,
         title: m["strMeal"] || "Delicious Dish",
         description: `${m["strArea"] || "International"} style ${m["strCategory"] || "dish"} - Authentic culinary recipe.`,
         category: m["strCategory"] || category || "Main Course",
@@ -390,6 +402,7 @@ export const recipeApi = {
         calories: 380 + ((idx * 40) % 300),
         imageUrl: m["strMealThumb"] || "/images/roasted-harvest-bowl.jpg",
         videoUrl: m["strYoutube"] || undefined,
+        sourceUrl: `https://www.themealdb.com/meal/${m["idMeal"]}`,
         source: "TheMealDB",
         ingredients: [],
         steps: [],
@@ -431,6 +444,10 @@ export const recipeApi = {
           calories: 450,
           imageUrl: meal["strMealThumb"] || "/images/roasted-harvest-bowl.jpg",
           videoUrl: meal["strYoutube"] || undefined,
+          sourceUrl:
+            typeof meal["strSource"] === "string" && /^https?:\/\//i.test(meal["strSource"])
+              ? meal["strSource"]
+              : `https://www.themealdb.com/meal/${meal["idMeal"] || id}`,
           source: "TheMealDB",
           ingredients: [],
           steps: [],

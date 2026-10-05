@@ -1,0 +1,37 @@
+# Render Blueprint Configuration for CookAI (Touchless Recipe)
+services:
+  # -------------------------------------------------------------
+  # 1. Backend Web Service (Express Node.js API)
+  # -------------------------------------------------------------
+  - type: web
+    name: cookai-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: CORS_ORIGIN
+        sync: false # Set to frontend Render URL e.g. https://cookai-frontend.onrender.com
+      - key: MONGODB_URI
+        sync: false # Set your MongoDB Atlas connection string here
+      - key: JWT_SECRET
+        generateValue: true # Generates a random secure secret automatically
+      - key: GEMINI_API_KEY
+        sync: false # Set your Google Gemini API key
+
+  # -------------------------------------------------------------
+  # 2. Frontend Web Service (Next.js)
+  # -------------------------------------------------------------
+  - type: web
+    name: cookai-frontend
+    env: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false # Set to backend API URL e.g. https://cookai-backend.onrender.com/api/v1

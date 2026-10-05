@@ -203,10 +203,10 @@ export function Dashboard() {
     <div className="min-h-screen bg-[#fbfaf7] text-[#17352d]">
       {/* Top Navigation */}
       <header className="sticky top-0 z-30 border-b border-[#31594c] bg-[#17352d]/95 text-white shadow-[0_8px_24px_rgba(23,53,45,0.12)] backdrop-blur-md">
-        <div className="w-full flex items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="w-full flex items-center justify-between gap-2 px-3 py-2.5 sm:px-6 sm:py-3 lg:px-8">
           {/* Brand Logo */}
-          <Link href="/" className="flex shrink-0 items-center gap-2.5 text-xl font-bold tracking-[-0.04em] transition hover:opacity-90">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#f3d7a3] text-[#17352d] shadow-[3px_3px_0_#d97742]">
+          <Link href="/" className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-[-0.04em] transition hover:opacity-90 sm:text-xl">
+            <span className="flex size-8 items-center justify-center rounded-xl bg-[#f3d7a3] text-[#17352d] shadow-[2px_2px_0_#d97742] sm:size-9 sm:shadow-[3px_3px_0_#d97742]">
               <Leaf aria-hidden="true" className="size-4" />
             </span>
             <span>CookAI<span className="text-[#f3a477]">.</span></span>
@@ -238,51 +238,51 @@ export function Dashboard() {
           </div>
 
           {/* Evenly Spaced Right Controls */}
-          <div className="flex shrink-0 items-center gap-2.5 sm:gap-3 lg:gap-4">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3 lg:gap-4">
             {/* Language Switcher */}
-            <div className="flex h-10 items-center rounded-xl border border-white/15 bg-white/10 p-1 text-xs font-semibold">
+            <div className="flex h-9 sm:h-10 items-center rounded-xl border border-white/15 bg-white/10 p-0.5 sm:p-1 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setLanguage("vi")}
                 className={cn(
-                  "flex h-full items-center gap-1 rounded-lg px-2.5 transition",
+                  "flex h-full items-center gap-1 rounded-lg px-1.5 sm:px-2.5 transition",
                   isVietnamese
                     ? "bg-[#f3d7a3] text-[#17352d] shadow-xs"
                     : "text-[#dce8dc] hover:text-white"
                 )}
               >
                 <span>🇻🇳</span>
-                <span>VI</span>
+                <span className="hidden sm:inline">VI</span>
               </button>
               <button
                 type="button"
                 onClick={() => setLanguage("en")}
                 className={cn(
-                  "flex h-full items-center gap-1 rounded-lg px-2.5 transition",
+                  "flex h-full items-center gap-1 rounded-lg px-1.5 sm:px-2.5 transition",
                   !isVietnamese
                     ? "bg-[#f3d7a3] text-[#17352d] shadow-xs"
                     : "text-[#dce8dc] hover:text-white"
                 )}
               >
                 <span>🇬🇧</span>
-                <span>EN</span>
+                <span className="hidden sm:inline">EN</span>
               </button>
             </div>
 
             {/* Community Feed Link */}
             <Link
               href="/feed"
-              className="flex h-10 items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-3 text-xs font-semibold text-[#dce8dc] transition hover:border-[#f3d7a3] hover:bg-white/15 hover:text-white"
+              className="flex h-9 sm:h-10 items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-2.5 sm:px-3 text-xs font-semibold text-[#dce8dc] transition hover:border-[#f3d7a3] hover:bg-white/15 hover:text-white"
               title={isVietnamese ? "Feed cộng đồng" : "Community feed"}
             >
               <Rss className="size-4 text-[#f3d7a3]" />
-              <span className="hidden sm:inline">{isVietnamese ? "Cộng đồng" : "Community"}</span>
+              <span className="hidden md:inline">{isVietnamese ? "Cộng đồng" : "Community"}</span>
             </Link>
 
             {/* Friends Link */}
             <Link
               href="/friends"
-              className="flex size-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:bg-white/15 hover:text-white"
+              className="flex size-9 sm:size-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:bg-white/15 hover:text-white"
               title={isVietnamese ? "Bạn bè" : "Friends"}
             >
               <Users className="size-4" />
@@ -293,17 +293,18 @@ export function Dashboard() {
               href="/playground"
               className={cn(
                 buttonVariants({ size: "sm" }),
-                "h-10 gap-1.5 rounded-xl border-[#f3a477] bg-[#d97742] px-3.5 text-xs font-semibold text-white shadow-[0_4px_0_#8f4528] hover:bg-[#bf6132] transition"
+                "h-9 sm:h-10 gap-1.5 rounded-xl border-[#f3a477] bg-[#d97742] px-2.5 sm:px-3.5 text-xs font-semibold text-white shadow-[0_3px_0_#8f4528] sm:shadow-[0_4px_0_#8f4528] hover:bg-[#bf6132] transition"
               )}
+              title={isVietnamese ? "Bếp rảnh tay" : "Hands-free Mode"}
             >
               <Hand className="size-4" />
-              <span>{isVietnamese ? "Bếp rảnh tay" : "Hands-free Mode"}</span>
+              <span className="hidden sm:inline">{isVietnamese ? "Bếp rảnh tay" : "Hands-free"}</span>
             </Link>
 
             {/* Favorites Link */}
             <Link
               href="/favorites"
-              className="relative flex size-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:bg-white/15 hover:text-white"
+              className="relative flex size-9 sm:size-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:bg-white/15 hover:text-white"
               title={isVietnamese ? "Món yêu thích" : "Favorite recipes"}
             >
               <Heart className="size-4" />
@@ -315,13 +316,13 @@ export function Dashboard() {
             </Link>
 
             {/* User Profile & Logout */}
-            <div className="flex h-10 items-center gap-2 border-l border-white/20 pl-2 sm:pl-3">
+            <div className="flex h-9 sm:h-10 items-center gap-1 sm:gap-2 border-l border-white/20 pl-1.5 sm:pl-3">
               <Link
                 href="/profile"
-                className="group flex h-10 items-center gap-2 rounded-xl px-2 transition hover:bg-white/10"
+                className="group flex h-9 sm:h-10 items-center gap-2 rounded-xl px-1 sm:px-2 transition hover:bg-white/10"
                 title={isVietnamese ? "Hồ sơ cá nhân" : "User Profile"}
               >
-                <div className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#f3d7a3]/40 bg-[#17352d] text-xs font-semibold text-[#f3d7a3] transition group-hover:border-[#d97742]">
+                <div className="relative flex size-7 sm:size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#f3d7a3]/40 bg-[#17352d] text-xs font-semibold text-[#f3d7a3] transition group-hover:border-[#d97742]">
                   {user?.image ? (
                     <Image
                       src={user.image}
@@ -334,7 +335,7 @@ export function Dashboard() {
                     <span suppressHydrationWarning>{user?.name ? user.name.slice(0, 2).toUpperCase() : "CH"}</span>
                   )}
                 </div>
-                <div className="hidden text-left sm:block">
+                <div className="hidden text-left md:block">
                   <p suppressHydrationWarning className="text-xs font-semibold leading-none text-white transition group-hover:text-[#f3d7a3]">
                     {user?.name || (isVietnamese ? "Đầu bếp" : "Chef")}
                   </p>
@@ -349,7 +350,7 @@ export function Dashboard() {
                 size="icon"
                 onClick={handleLogout}
                 title={isVietnamese ? "Đăng xuất" : "Logout"}
-                className="size-9 rounded-xl text-[#b9d1bd] hover:bg-[#ffebee]/20 hover:text-red-300"
+                className="size-8 sm:size-9 rounded-xl text-[#b9d1bd] hover:bg-[#ffebee]/20 hover:text-red-300"
               >
                 <LogOut className="size-4" />
               </Button>

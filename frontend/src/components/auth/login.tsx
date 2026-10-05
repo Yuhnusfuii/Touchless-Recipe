@@ -134,7 +134,7 @@ export function Login({ onClose, onSwitchToRegister, standalone = false }: Login
           </button>
         )}
       </div>
-      <p className="text-sm font-medium uppercase tracking-[0.14em] text-[#c56537]">mise.</p>
+      <p className="text-sm font-medium uppercase tracking-[0.14em] text-[#c56537]">CookAI</p>
       <h1 id="login-title" className="mt-3 font-serif text-3xl leading-tight sm:text-4xl">
         {isVietnamese ? "Đăng nhập để vào bếp" : "Sign in to enter the kitchen"}
       </h1>
@@ -263,7 +263,7 @@ export function Login({ onClose, onSwitchToRegister, standalone = false }: Login
         <div className="absolute inset-0 bg-[#17352d]/60" />
         <div className="relative flex h-full flex-col justify-between p-12 text-white">
           <Link href="/" className="text-xl font-semibold">
-            mise<span className="text-[#f3d7a3]">.</span>
+            CookAI<span className="text-[#f3d7a3]">.</span>
           </Link>
           <div>
             <p className="mb-4 text-sm font-medium uppercase tracking-[0.16em] text-[#f3d7a3]">

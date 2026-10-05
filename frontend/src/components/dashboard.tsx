@@ -203,17 +203,18 @@ export function Dashboard() {
     <div className="min-h-screen bg-[#fbfaf7] text-[#17352d]">
       {/* Top Navigation */}
       <header className="sticky top-0 z-30 border-b border-[#31594c] bg-[#17352d]/95 text-white shadow-[0_8px_24px_rgba(23,53,45,0.12)] backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5 sm:px-8 lg:px-12">
-          <Link href="/" className="flex shrink-0 items-center gap-3 text-lg font-bold tracking-[-0.04em]">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-[#f3d7a3] text-[#17352d] shadow-[4px_4px_0_#d97742]">
+        <div className="w-full flex items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          {/* Brand Logo */}
+          <Link href="/" className="flex shrink-0 items-center gap-2.5 text-xl font-bold tracking-[-0.04em] transition hover:opacity-90">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-[#f3d7a3] text-[#17352d] shadow-[3px_3px_0_#d97742]">
               <Leaf aria-hidden="true" className="size-4" />
             </span>
-            <span>mise<span className="text-[#f3a477]">.</span></span>
+            <span>CookAI<span className="text-[#f3a477]">.</span></span>
           </Link>
 
-          {/* Quick Search Bar with live indicator */}
-          <div className="relative hidden w-80 md:block lg:w-96">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#b9d1bd]" />
+          {/* Quick Search Bar */}
+          <div className="relative hidden flex-1 max-w-md lg:max-w-xl md:block mx-2 lg:mx-6">
+            <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-[#b9d1bd]" />
             <input
               type="text"
               placeholder={
@@ -223,7 +224,7 @@ export function Dashboard() {
               }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 w-full rounded-full border border-white/15 bg-white/10 pl-9 pr-8 text-xs text-white outline-none transition placeholder:text-[#b9d1bd] focus:border-[#f3d7a3] focus:bg-white/15 focus:ring-2 focus:ring-[#f3d7a3]/20"
+              className="h-10 w-full rounded-full border border-white/15 bg-white/10 pl-10 pr-9 text-xs text-white outline-none transition placeholder:text-[#b9d1bd] focus:border-[#f3d7a3] focus:bg-white/15 focus:ring-2 focus:ring-[#f3d7a3]/20"
             />
             {searchQuery && (
               <button
@@ -236,14 +237,15 @@ export function Dashboard() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Clear Dual-State Language Switcher */}
-            <div className="flex items-center rounded-lg border border-white/15 bg-white/10 p-0.5 text-xs font-semibold">
+          {/* Evenly Spaced Right Controls */}
+          <div className="flex shrink-0 items-center gap-2.5 sm:gap-3 lg:gap-4">
+            {/* Language Switcher */}
+            <div className="flex h-10 items-center rounded-xl border border-white/15 bg-white/10 p-1 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setLanguage("vi")}
                 className={cn(
-                  "flex items-center gap-1 rounded-md px-2.5 py-1 transition",
+                  "flex h-full items-center gap-1 rounded-lg px-2.5 transition",
                   isVietnamese
                     ? "bg-[#f3d7a3] text-[#17352d] shadow-xs"
                     : "text-[#dce8dc] hover:text-white"
@@ -256,7 +258,7 @@ export function Dashboard() {
                 type="button"
                 onClick={() => setLanguage("en")}
                 className={cn(
-                  "flex items-center gap-1 rounded-md px-2.5 py-1 transition",
+                  "flex h-full items-center gap-1 rounded-lg px-2.5 transition",
                   !isVietnamese
                     ? "bg-[#f3d7a3] text-[#17352d] shadow-xs"
                     : "text-[#dce8dc] hover:text-white"
@@ -267,21 +269,21 @@ export function Dashboard() {
               </button>
             </div>
 
+            {/* Community Feed Link */}
             <Link
               href="/feed"
-              className="flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:text-white sm:h-9 sm:w-auto sm:gap-1.5 sm:rounded-lg sm:px-3"
+              className="flex h-10 items-center gap-1.5 rounded-xl border border-white/15 bg-white/10 px-3 text-xs font-semibold text-[#dce8dc] transition hover:border-[#f3d7a3] hover:bg-white/15 hover:text-white"
               title={isVietnamese ? "Feed cộng đồng" : "Community feed"}
-              aria-label={isVietnamese ? "Feed cộng đồng" : "Community feed"}
             >
-              <Rss className="size-4" />
-              <span className="hidden text-xs font-semibold sm:inline">{isVietnamese ? "Cộng đồng" : "Community"}</span>
+              <Rss className="size-4 text-[#f3d7a3]" />
+              <span className="hidden sm:inline">{isVietnamese ? "Cộng đồng" : "Community"}</span>
             </Link>
 
+            {/* Friends Link */}
             <Link
               href="/friends"
-              className="flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:text-white"
+              className="flex size-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:bg-white/15 hover:text-white"
               title={isVietnamese ? "Bạn bè" : "Friends"}
-              aria-label={isVietnamese ? "Bạn bè" : "Friends"}
             >
               <Users className="size-4" />
             </Link>
@@ -291,28 +293,32 @@ export function Dashboard() {
               href="/playground"
               className={cn(
                 buttonVariants({ size: "sm" }),
-                "gap-1.5 border-[#f3a477] bg-[#d97742] text-white shadow-[0_4px_0_#8f4528] hover:bg-[#bf6132]"
+                "h-10 gap-1.5 rounded-xl border-[#f3a477] bg-[#d97742] px-3.5 text-xs font-semibold text-white shadow-[0_4px_0_#8f4528] hover:bg-[#bf6132] transition"
               )}
             >
-              <Hand className="size-3.5" />
+              <Hand className="size-4" />
               <span>{isVietnamese ? "Bếp rảnh tay" : "Hands-free Mode"}</span>
             </Link>
 
+            {/* Favorites Link */}
             <Link
               href="/favorites"
-              className="relative flex size-9 items-center justify-center rounded-full border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:text-white"
+              className="relative flex size-10 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-[#dce8dc] transition hover:border-[#f3d7a3] hover:bg-white/15 hover:text-white"
               title={isVietnamese ? "Món yêu thích" : "Favorite recipes"}
-              aria-label={isVietnamese ? "Món yêu thích" : "Favorite recipes"}
             >
               <Heart className="size-4" />
-              {Object.keys(favorites).length > 0 && <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#d97742] text-[9px] font-bold text-white">{Object.keys(favorites).length}</span>}
+              {Object.keys(favorites).length > 0 && (
+                <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-[#d97742] text-[9px] font-bold text-white">
+                  {Object.keys(favorites).length}
+                </span>
+              )}
             </Link>
 
-            {/* User Profile Link / Logout */}
-            <div className="flex items-center gap-2 border-l border-white/15 pl-2 sm:pl-3">
+            {/* User Profile & Logout */}
+            <div className="flex h-10 items-center gap-2 border-l border-white/20 pl-2 sm:pl-3">
               <Link
                 href="/profile"
-                className="group flex items-center gap-2 rounded-xl p-1 transition hover:bg-white/10"
+                className="group flex h-10 items-center gap-2 rounded-xl px-2 transition hover:bg-white/10"
                 title={isVietnamese ? "Hồ sơ cá nhân" : "User Profile"}
               >
                 <div className="relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#f3d7a3]/40 bg-[#17352d] text-xs font-semibold text-[#f3d7a3] transition group-hover:border-[#d97742]">
@@ -332,7 +338,7 @@ export function Dashboard() {
                   <p suppressHydrationWarning className="text-xs font-semibold leading-none text-white transition group-hover:text-[#f3d7a3]">
                     {user?.name || (isVietnamese ? "Đầu bếp" : "Chef")}
                   </p>
-                  <p suppressHydrationWarning className="mt-0.5 text-[10px] text-[#b9d1bd]">
+                  <p suppressHydrationWarning className="mt-0.5 max-w-[130px] truncate text-[10px] text-[#b9d1bd]">
                     {user?.email || "user@touchless.io"}
                   </p>
                 </div>
@@ -343,7 +349,7 @@ export function Dashboard() {
                 size="icon"
                 onClick={handleLogout}
                 title={isVietnamese ? "Đăng xuất" : "Logout"}
-                className="size-8 text-[#b9d1bd] hover:bg-[#ffebee] hover:text-red-300"
+                className="size-9 rounded-xl text-[#b9d1bd] hover:bg-[#ffebee]/20 hover:text-red-300"
               >
                 <LogOut className="size-4" />
               </Button>
@@ -914,7 +920,7 @@ export function Dashboard() {
         <div className="relative mx-auto max-w-7xl px-5 pb-7 pt-12 sm:px-8 lg:px-12">
           <div className="grid gap-10 border-b border-white/15 pb-10 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.8fr_0.8fr_1fr]">
             <div className="max-w-sm">
-              <Link href="/" className="flex w-fit items-center gap-2 text-2xl font-semibold tracking-[-0.05em]"><span className="flex size-9 items-center justify-center rounded-full bg-[#f3d7a3] text-[#17352d]"><Leaf className="size-4" /></span>mise<span className="text-[#d97742]">.</span></Link>
+              <Link href="/" className="flex w-fit items-center gap-2 text-2xl font-semibold tracking-[-0.05em]"><span className="flex size-9 items-center justify-center rounded-full bg-[#f3d7a3] text-[#17352d]"><Leaf className="size-4" /></span>CookAI<span className="text-[#d97742]">.</span></Link>
               <p className="mt-4 text-sm leading-6 text-white/65">{isVietnamese ? "Một căn bếp bình tĩnh hơn cho những bữa ăn đáng nhớ hơn." : "A calmer kitchen for meals worth remembering."}</p>
               <Link href="/playground" className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#f3d7a3] transition hover:text-white">{isVietnamese ? "Mở bếp rảnh tay" : "Open hands-free kitchen"}<ArrowRight className="size-4" /></Link>
             </div>

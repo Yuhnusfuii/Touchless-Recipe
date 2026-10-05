@@ -25,7 +25,7 @@ const vietnameseSerif = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "mise. | Touchless Recipe",
+  title: "CookAI | Touchless Recipe",
   description: "A quiet kitchen companion for hands-free cooking.",
 };
 

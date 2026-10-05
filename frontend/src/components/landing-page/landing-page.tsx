@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 
 export default function LandingPage() {
   const { setLanguage, isVietnamese, t } = useLanguage()
-  const steps = [
+  const steps = [ 
     ["01", Hand, t("keepHands"), t("keepHandsDescription")],
     ["02", Mic, t("askCooking"), t("askCookingDescription")],
     ["03", TimerReset, t("timing"), t("timingDescription")],
@@ -19,7 +19,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen overflow-hidden bg-[#fbfaf7] text-[#17352d]">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-12">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-[-0.04em]"><span className="flex size-8 items-center justify-center rounded-full bg-[#17352d] text-[#f3d7a3]"><Leaf aria-hidden="true" className="size-4" /></span>mise<span className="text-[#d97742]">.</span></Link>
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-[-0.04em]"><span className="flex size-8 items-center justify-center rounded-full bg-[#17352d] text-[#f3d7a3]"><Leaf aria-hidden="true" className="size-4" /></span>CookAI<span className="text-[#d97742]"></span></Link>
         <nav className="hidden items-center gap-8 text-sm text-[#527066] md:flex"><a href="#how-it-works" className="hover:text-[#17352d]">{t("howItWorks")}</a><a href="#kitchen" className="hover:text-[#17352d]">{t("upgradedKitchen")}</a><a href="#stories" className="hover:text-[#17352d]">{t("stories")}</a></nav>
         <div className="flex items-center gap-2">
           <div className="flex items-center rounded-lg border border-[#c5d2cc] bg-white p-0.5 text-xs font-semibold shadow-2xs">
@@ -90,7 +90,7 @@ export default function LandingPage() {
             <div className="max-w-sm">
               <Link href="/" className="flex w-fit items-center gap-2 text-2xl font-semibold tracking-[-0.05em]">
                 <span className="flex size-9 items-center justify-center rounded-full bg-[#f3d7a3] text-[#17352d]"><Leaf aria-hidden="true" className="size-4" /></span>
-                mise<span className="text-[#d97742]">.</span>
+                CookAI<span className="text-[#d97742]">.</span>
               </Link>
               <p className="mt-5 text-sm leading-6 text-white/65">{isVietnamese ? "Một căn bếp bình tĩnh hơn cho những bữa ăn đáng nhớ hơn." : "A calmer kitchen for meals worth remembering."}</p>
               <Link href="/playground" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#f3d7a3] transition hover:text-white">{isVietnamese ? "Mở bếp thử nghiệm" : "Open the kitchen playground"}<ArrowRight aria-hidden="true" className="size-4" /></Link>

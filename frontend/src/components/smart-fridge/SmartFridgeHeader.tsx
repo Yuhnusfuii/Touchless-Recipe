@@ -10,7 +10,7 @@ export function SmartFridgeHeader({ isVietnamese }: { isVietnamese: boolean }) {
             <Snowflake className="size-4" />
           </span>
           <span className="text-lg font-bold tracking-[-0.04em]">
-            mise<span className="text-[#f3a477]">.</span>
+            CookAI<span className="text-[#f3a477]">.</span>
           </span>
           <span className="hidden border-l border-white/20 pl-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#b9d1bd] sm:block">
             {isVietnamese ? "Tủ lạnh thông minh" : "Smart fridge"}

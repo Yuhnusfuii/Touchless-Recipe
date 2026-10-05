@@ -296,7 +296,7 @@ export default function ProfilePage() {
                 </div>
 
                 <h1 suppressHydrationWarning className="mt-2 font-serif text-2xl font-bold sm:text-3xl lg:text-4xl">
-                  {name || (isVietnamese ? "Đầu bếp mise" : "mise Chef")}
+                  {name || (isVietnamese ? "Đầu bếp CookAI" : "CookAI Chef")}
                 </h1>
                 <p suppressHydrationWarning className="mt-1 flex items-center gap-1.5 text-xs text-white/75 sm:text-sm">
                   <Mail className="size-3.5 text-[#f3d7a3]" />

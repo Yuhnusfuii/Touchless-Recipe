@@ -35,7 +35,7 @@ export function FeedHeader() {
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-8 lg:px-12">
         <Link href="/" className="flex shrink-0 items-center gap-2 text-lg font-semibold tracking-[-0.04em]">
           <span className="flex size-8 items-center justify-center rounded-full bg-[#17352d] text-[#f3d7a3]"><ChefHat className="size-4" /></span>
-          mise<span className="text-[#d97742]">.</span>
+          CookAI<span className="text-[#d97742]">.</span>
         </Link>
         <div className="relative hidden min-w-0 flex-1 sm:block sm:max-w-md">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#527066]" />

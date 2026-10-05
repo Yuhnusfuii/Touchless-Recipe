@@ -152,7 +152,7 @@ export function Register({ onClose, onSwitchToLogin, standalone = false }: Regis
           </button>
         )}
       </div>
-      <p className="text-sm font-medium uppercase tracking-[0.14em] text-[#c56537]">mise.</p>
+      <p className="text-sm font-medium uppercase tracking-[0.14em] text-[#c56537]">CookAI</p>
       <h1 id="register-title" className="mt-3 font-serif text-3xl leading-tight sm:text-4xl">
         {isVietnamese ? "Tạo tài khoản mới" : "Create your kitchen account"}
       </h1>
@@ -309,7 +309,7 @@ export function Register({ onClose, onSwitchToLogin, standalone = false }: Regis
         <div className="absolute inset-0 bg-[#17352d]/60" />
         <div className="relative flex h-full flex-col justify-between p-12 text-white">
           <Link href="/" className="text-xl font-semibold">
-            mise<span className="text-[#f3d7a3]">.</span>
+            CookAI<span className="text-[#f3d7a3]">.</span>
           </Link>
           <div>
             <p className="mb-4 text-sm font-medium uppercase tracking-[0.16em] text-[#f3d7a3]">

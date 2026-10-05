@@ -1,0 +1,41 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build & Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js v20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Root & Workspace Dependencies
+        run: npm install
+
+      - name: Generate Prisma Client (Backend)
+        run: npm run prisma:generate --workspace=backend
+        env:
+          DATABASE_URL: "file:./dev.db"
+
+      - name: Run Unit & Integration Tests
+        run: npm test
+
+      - name: Build Backend (TypeScript Compilation)
+        run: npm run build --workspace=backend
+
+      - name: Build Frontend (Next.js Production Build)
+        run: npm run build --workspace=frontend
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
